@@ -13,13 +13,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            App()
+            val db: AppDB = getDatabaseInstance(getDatabaseBuilder(applicationContext))
+            App(db.getDao())
         }
     }
 }
 
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun AppAndroidPreview() {
-    App()
+    val fakeDao = FakeAppDAO()
+    App(fakeDao)
 }
