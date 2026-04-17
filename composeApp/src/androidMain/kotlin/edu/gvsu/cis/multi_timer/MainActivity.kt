@@ -6,6 +6,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import edu.gvsu.cis.multi_timer.data.App
+import edu.gvsu.cis.multi_timer.data.AppDB
+import edu.gvsu.cis.multi_timer.data.FakeAppDAO
+import edu.gvsu.cis.multi_timer.data.getDatabaseInstance
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

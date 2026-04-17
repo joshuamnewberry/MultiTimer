@@ -2,6 +2,7 @@ package edu.gvsu.cis.multi_timer
 
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import edu.gvsu.cis.multi_timer.data.AppDB
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
