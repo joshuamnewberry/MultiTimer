@@ -7,11 +7,12 @@ import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import androidx.room.Upsert
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
+import androidx.room.TypeConverters
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -19,33 +20,55 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AppDAO {
-    @Insert
-    suspend fun insert(gs: Playset)
+    // Playset Queries
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPlayset(gs: Playset)
 
     @Update
-    suspend fun modifyTable(gs: Playset)
-
-    @Upsert
-    suspend fun someAction(gs: Playset)
+    suspend fun modifyPlayset(gs: Playset)
 
     @Delete
-    suspend fun removeOne(gs: Playset)
+    suspend fun removePlayset(gs: Playset)
 
     @Query("DELETE FROM Playset")
-    suspend fun removeAll()
+    suspend fun removeAllPlaysets()
 
     @Query("SELECT * FROM Playset")
-    suspend fun selectAllAsList(): List<Playset>
+    fun selectAllPlaysets(): Flow<List<Playset>>
 
-    @Query("SELECT * FROM Playset")
-    fun selectAll(): Flow<List<Playset>>
+    @Query("SELECT * FROM Playset WHERE playsetID = :id")
+    suspend fun getPlaysetById(id: Int): Playset?
+
+    // Player Queries
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPlayer(player: Player)
+
+    @Update
+    suspend fun modifyPlayer(player: Player)
+
+    @Delete
+    suspend fun removePlayer(player: Player)
+
+    @Query("SELECT * FROM Player")
+    fun selectAllPlayers(): Flow<List<Player>>
+
+    // Active Game Queries
+    @Query("SELECT * FROM ActiveGameState WHERE activeGameStateID = 0")
+    fun getActiveGame(): Flow<ActiveGameState?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertActiveGame(gameState: ActiveGameState)
+
+    @Query("DELETE FROM ActiveGameState")
+    suspend fun clearActiveGame()
 }
 
 @Database(
-    entities = [Playset::class],
+    entities = [Playset::class, Player::class, ActiveGameState::class],
     version = 1,
     exportSchema = true
 )
+@TypeConverters(Converters::class)
 @ConstructedBy(MyDatabaseBuilder::class)
 abstract class AppDB: RoomDatabase() {
     abstract fun getDao(): AppDAO
@@ -57,6 +80,7 @@ expect object MyDatabaseBuilder: RoomDatabaseConstructor<AppDB> {
 
 fun getDatabaseInstance(builder: RoomDatabase.Builder<AppDB>): AppDB {
     return builder
+        .fallbackToDestructiveMigration(dropAllTables = true)
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
         .build()

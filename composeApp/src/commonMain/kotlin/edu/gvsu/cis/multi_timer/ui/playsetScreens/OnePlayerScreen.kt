@@ -8,10 +8,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.sp
+import edu.gvsu.cis.multi_timer.data.ActiveGameState
 import edu.gvsu.cis.multi_timer.viewModels.ActiveGameViewModel
 
 @Composable
-fun OnePlayerScreen(viewModel: ActiveGameViewModel, onBack: () -> Unit) {
+fun OnePlayerScreen(viewModel: ActiveGameViewModel, activeGameState: ActiveGameState) {
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,

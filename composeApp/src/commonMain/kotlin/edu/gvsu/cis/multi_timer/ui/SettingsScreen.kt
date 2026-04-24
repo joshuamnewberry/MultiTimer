@@ -21,3 +21,4 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
         Text("Settings!", fontSize = 30.sp)
     }
 }
+

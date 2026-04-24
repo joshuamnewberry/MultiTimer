@@ -16,7 +16,6 @@ fun getDatabaseBuilder(): RoomDatabase.Builder<AppDB> {
 }
 @OptIn(ExperimentalForeignApi::class)
 private fun documentDirectory(): String {
-    // a helper function to determine the directory name
     val documentDirectory = NSFileManager.defaultManager.URLForDirectory(
         directory = NSDocumentDirectory, inDomain = NSUserDomainMask,
         appropriateForURL = null, create = true, error = null
