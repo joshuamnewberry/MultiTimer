@@ -55,10 +55,23 @@ class HomeViewModel(private val dao: AppDAO) : ViewModel() {
             )
         )
 
+        dao.insertPlayset(
+            Playset(
+                name = "Standard Stopwatch",
+                playerCount = 1,
+                counterTypesJson = "STOPWATCH",
+                autoAdvance = AutoAdvanceConfiguration(
+                    enabled = true,
+                    reversed = false,
+                    inversed = false
+                )
+            )
+        )
+
         // Create Default Playsets
         dao.insertPlayset(
             Playset(
-                name = "Standard Chess",
+                name = "5 min Chess",
                 playerCount = 2,
                 counterTypesJson = "TIMER,TIMER",
                 autoAdvance = AutoAdvanceConfiguration(
@@ -66,6 +79,35 @@ class HomeViewModel(private val dao: AppDAO) : ViewModel() {
                     reversed = false,
                     inversed = false
                 )
+            )
+        )
+
+        // Create Default Playsets
+        dao.insertPlayset(
+            Playset(
+                name = "3 min + 2 sec Chess",
+                playerCount = 2,
+                counterTypesJson = "TIMER,TIMER",
+                autoAdvance = AutoAdvanceConfiguration(
+                    enabled = true,
+                    reversed = false,
+                    inversed = false
+                ),
+                startingTimerSeconds = 3 * 60,
+                incrementSeconds = 2
+            )
+        )
+
+        dao.insertPlayset(
+            Playset(
+                name = "Magic the Gathering Life Counter",
+                playerCount = 3,
+                counterTypesJson = "LIFE,LIFE,LIFE",
+                // Life counters cannot auto-advance
+                autoAdvance = AutoAdvanceConfiguration(
+                    enabled = false,
+                    reversed = false,
+                    inversed = false)
             )
         )
 
@@ -84,44 +126,40 @@ class HomeViewModel(private val dao: AppDAO) : ViewModel() {
     }
 
     // Initialize a new game state and overwrite the old one
-    fun startNewGame(playset: Playset, onGameReady: () -> Unit) {
+    fun startNewGame(playset: Playset, onNavigate: () -> Unit) {
         viewModelScope.launch {
+            val modes = playset.counterTypesJson.split(",").mapNotNull {
+                try { CounterMode.valueOf(it) } catch (_: Exception) { null }
+            }
 
-            val initialPlayers = List(playset.playerCount) { index ->
-                val isFirstPlayer = (index == 0)
+            val allLife: Boolean = modes.all {it == CounterMode.LIFE }
 
-                // THE INITIALIZATION TRICK
-                val isTurn = if (!playset.autoAdvance.enabled) {
-                    true // Free-for-all: everyone's turn is always true
-                } else {
-                    isFirstPlayer // AutoAdvance: only Player 1 starts with the turn
-                }
+            val initialPlayersState = List(playset.playerCount) { index ->
+                val playerMode = modes.getOrElse(index) { CounterMode.TIMER }
 
-                val running = if (!playset.autoAdvance.enabled) {
-                    false // Start paused in free-for-all
-                } else if (playset.autoAdvance.inversed) {
-                    !isFirstPlayer // Inversed: everyone runs except the first player
-                } else {
-                    isFirstPlayer // Standard: only first player runs
+                val startingValue = when (playerMode) {
+                    CounterMode.TIMER, CounterMode.STOPWATCH -> playset.startingTimerSeconds * 1000L
+                    CounterMode.LIFE -> playset.startingLife.toLong()
                 }
 
                 PlayerActiveState(
-                    playerId = index,
-                    mode = CounterMode.TIMER,
-                    currentValue = 300000L,
-                    isRunning = running,
-                    isCurrentTurn = isTurn
+                    playerProfileId = 1,
+                    mode = playerMode,
+                    currentValue = startingValue,
+                    isRunning = allLife,
+                    isCurrentTurn = playset.autoAdvance.enabled && index == 0
                 )
             }
 
-            val newGame = ActiveGameState(
+            val newGameState = ActiveGameState(
                 currentPlayset = playset,
-                currentPlayersState = initialPlayers,
-                activeGameStateID = 0
+                currentPlayersState = initialPlayersState,
+                isGamePaused = allLife,
+                hasGameStarted = allLife
             )
 
-            dao.upsertActiveGame(newGame)
-            onGameReady()
+            dao.upsertActiveGame(newGameState)
+            onNavigate()
         }
     }
 }

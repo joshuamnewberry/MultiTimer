@@ -25,7 +25,7 @@ data class Player(
 
 @Serializable
 data class PlayerActiveState(
-    val playerId: Int,
+    val playerProfileId: Int,
     val mode: CounterMode,
     val currentValue: Long,
     val isRunning: Boolean,
@@ -41,6 +41,8 @@ data class Playset(
     val counterTypesJson: String = "",
     @Embedded val autoAdvance: AutoAdvanceConfiguration = AutoAdvanceConfiguration(),
     val incrementSeconds: Int = 0,
+    val startingLife: Int = 40,
+    val startingTimerSeconds: Int = 300,
     @PrimaryKey(autoGenerate = true) val playsetID: Int = 0
 )
 
@@ -48,5 +50,7 @@ data class Playset(
 data class ActiveGameState(
     @Embedded val currentPlayset: Playset,
     val currentPlayersState: List<PlayerActiveState>,
+    val isGamePaused: Boolean = true,
+    val hasGameStarted: Boolean = false,
     @PrimaryKey val activeGameStateID: Int = 0
 )

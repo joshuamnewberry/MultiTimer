@@ -39,90 +39,157 @@ class ActiveGameViewModel(private val dao: AppDAO) : ViewModel() {
 
                 _gameState.value?.let { state ->
                     var stateChanged = false
-                    val updatedPlayers = state.currentPlayersState.map { player ->
-                        if (player.isRunning) {
-                            stateChanged = true
-                            when (player.mode) {
-                                CounterMode.TIMER -> player.copy(currentValue = maxOf(0L, player.currentValue - 100))
-                                CounterMode.STOPWATCH -> player.copy(currentValue = player.currentValue + 100)
-                                CounterMode.LIFE -> player
-                            }
-                        } else {
-                            player
-                        }
-                    }
+                    if(!state.isGamePaused) {
+                        val updatedPlayers = state.currentPlayersState.map { player ->
+                            if (player.isRunning) {
+                                stateChanged = true
+                                when (player.mode) {
+                                    CounterMode.TIMER -> player.copy(
+                                        currentValue = maxOf(
+                                            0L,
+                                            player.currentValue - 100
+                                        )
+                                    )
 
-                    if (stateChanged) {
-                        _gameState.value = state.copy(currentPlayersState = updatedPlayers)
+                                    CounterMode.STOPWATCH -> player.copy(currentValue = player.currentValue + 100)
+                                    CounterMode.LIFE -> player
+                                }
+                            } else {
+                                player
+                            }
+                        }
+                        if (stateChanged) {
+                            _gameState.value = state.copy(currentPlayersState = updatedPlayers)
+                        }
                     }
                 }
             }
         }
     }
 
-    fun handleInteraction(
-        playerId: Int,
-        config: AutoAdvanceConfiguration,
-        incrementMs: Long = 0L
-    ) {
+    fun toggleGlobalPlayPause() {
+        val state = _gameState.value ?: return
+        val config = state.currentPlayset.autoAdvance
+        val players = state.currentPlayersState.toMutableList()
+
+        val isNowPaused = !state.isGamePaused
+
+        // If we are unpausing for the very first time using the Play button
+        if (!isNowPaused && !state.hasGameStarted) {
+            if (!config.enabled) {
+                // Free-for-all: Start all non-life clocks simultaneously
+                for (i in players.indices) {
+                    if (players[i].mode != CounterMode.LIFE) {
+                        players[i] = players[i].copy(isRunning = true)
+                    }
+                }
+            } else {
+                // AutoAdvance: Start ONLY the clock for the player whose turn it is
+                val activeIndex = players.indexOfFirst { it.isCurrentTurn }
+                if (activeIndex != -1 && players[activeIndex].mode != CounterMode.LIFE) {
+                    players[activeIndex] = players[activeIndex].copy(isRunning = true)
+                }
+            }
+        }
+
+        val newState = state.copy(
+            isGamePaused = isNowPaused,
+            hasGameStarted = true, // Officially started!
+            currentPlayersState = players
+        )
+        _gameState.value = newState
+        saveStateToDatabase(newState)
+    }
+
+    fun handleInteraction(index: Int, config: AutoAdvanceConfiguration, incrementMs: Long = 0L) {
         val currentState = _gameState.value ?: return
         val players = currentState.currentPlayersState.toMutableList()
-        val tappedPlayerIndex = players.indexOfFirst { it.playerId == playerId }
 
-        if (tappedPlayerIndex == -1) return
-        val tappedPlayer = players[tappedPlayerIndex]
+        if (index !in players.indices) return
+        val tappedPlayer = players[index]
 
-        if (tappedPlayer.mode == CounterMode.LIFE) {
+        if (tappedPlayer.mode == CounterMode.LIFE) return
+
+        // If it's a Mid-Game Pause, ignore all taps.
+        if (currentState.isGamePaused && currentState.hasGameStarted) return
+
+        // If it's the First Start and they tapped a clock INSTEAD of the play button
+        if (!currentState.hasGameStarted) {
+            if (!config.enabled) {
+                // Free-for-all: Only start the specific clock they tapped
+                players[index] = tappedPlayer.copy(isRunning = true)
+                val newState = currentState.copy(
+                    isGamePaused = false,
+                    hasGameStarted = true,
+                    currentPlayersState = players
+                )
+                _gameState.value = newState
+                saveStateToDatabase(newState)
+            } else {
+                // AutoAdvance: Override the default starting player based on who was tapped
+                val previousTurnIndex = players.indexOfFirst { it.isCurrentTurn }
+                if (previousTurnIndex != -1 && previousTurnIndex != index) {
+                    players[previousTurnIndex] = players[previousTurnIndex].copy(isCurrentTurn = false)
+                }
+
+                players[index] = tappedPlayer.copy(
+                    isCurrentTurn = true,
+                    isRunning = true
+                )
+
+                val newState = currentState.copy(
+                    isGamePaused = false,
+                    hasGameStarted = true,
+                    currentPlayersState = players
+                )
+                _gameState.value = newState
+                saveStateToDatabase(newState)
+            }
             return
         }
 
-        // Rule: If it's not their turn, ignore the tap completely
-        if (!tappedPlayer.isCurrentTurn) return
+        // Normal Active Game Logic
+        if (!tappedPlayer.isCurrentTurn && config.enabled) return
 
         if (!config.enabled) {
-            // Free-for-all mode: Just toggle this specific player's clock
-            players[tappedPlayerIndex] = tappedPlayer.copy(
-                isRunning = !tappedPlayer.isRunning
-            )
+            players[index] = tappedPlayer.copy(isRunning = !tappedPlayer.isRunning)
         } else {
-            // AutoAdvance is enabled.
-
-            // Find the next player
-            val nextIndex = if (config.reversed) {
-                if (tappedPlayerIndex - 1 < 0) players.size - 1 else tappedPlayerIndex - 1
+            if (!tappedPlayer.isRunning) {
+                players[index] = tappedPlayer.copy(isRunning = true)
             } else {
-                (tappedPlayerIndex + 1) % players.size
+                val nextIndex = if (config.reversed) {
+                    if (index - 1 < 0) players.size - 1 else index - 1
+                } else {
+                    (index + 1) % players.size
+                }
+
+                players[index] = tappedPlayer.copy(
+                    currentValue = tappedPlayer.currentValue + incrementMs,
+                    isCurrentTurn = false,
+                    isRunning = false
+                )
+
+                players[nextIndex] = players[nextIndex].copy(
+                    isCurrentTurn = true,
+                    isRunning = true
+                )
             }
-            val nextPlayer = players[nextIndex]
-
-            // End the current player's turn, add increment, and flip their clock state
-            players[tappedPlayerIndex] = tappedPlayer.copy(
-                currentValue = tappedPlayer.currentValue + incrementMs,
-                isCurrentTurn = false,
-                isRunning = !tappedPlayer.isRunning
-            )
-
-            // Start the next player's turn and flip their clock state
-            players[nextIndex] = nextPlayer.copy(
-                isCurrentTurn = true,
-                isRunning = !nextPlayer.isRunning
-            )
         }
-
-        // Update state and save to DB since turn changed
         val newState = currentState.copy(currentPlayersState = players)
         _gameState.value = newState
         saveStateToDatabase(newState)
     }
 
-    fun updateLife(playerId: Int, amount: Long) {
+    fun updateLife(index: Int, amount: Long) {
         val currentState = _gameState.value ?: return
-        val players = currentState.currentPlayersState.toMutableList()
-        val playerIndex = players.indexOfFirst { it.playerId == playerId }
 
-        if (playerIndex != -1) {
-            val player = players[playerIndex]
-            players[playerIndex] = player.copy(currentValue = player.currentValue + amount)
+        // If the game has started but is paused, block life changes.
+        if (currentState.hasGameStarted && currentState.isGamePaused) return
+
+        val players = currentState.currentPlayersState.toMutableList()
+        if (index in players.indices) {
+            val player = players[index]
+            players[index] = player.copy(currentValue = player.currentValue + amount)
 
             val newState = currentState.copy(currentPlayersState = players)
             _gameState.value = newState
@@ -130,7 +197,7 @@ class ActiveGameViewModel(private val dao: AppDAO) : ViewModel() {
         }
     }
 
-    fun pauseAll() {
+    fun stopAll() {
         val currentState = _gameState.value ?: return
         val pausedPlayers = currentState.currentPlayersState.map { it.copy(isRunning = false) }
         val newState = currentState.copy(currentPlayersState = pausedPlayers)
