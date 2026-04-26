@@ -27,8 +27,16 @@ class HomeViewModel(private val dao: AppDAO) : ViewModel() {
             initialValue = false
         )
 
-    // Observe the list of saved playsets for the Quick Start menu
+    // Observe the list of saved playsets for the Start New Game and Manage Playsets menu
     val playsets: StateFlow<List<Playset>> = dao.selectAllPlaysets()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    // Observe the list of saved players for the Manage Players menu
+    val players: StateFlow<List<Player>> = dao.selectAllPlayers()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -46,29 +54,32 @@ class HomeViewModel(private val dao: AppDAO) : ViewModel() {
         }
     }
 
+    // Create default player and some sample playsets on app first open
     private suspend fun initializeDefaults() {
         // Create the undeletable Default Player.
         dao.insertPlayer(
             Player(
-                name = "Player 1",
-                playerBackgroundColorArgb = 0xFF448AFF // Blue
+                name = "Default",
+                playerBackgroundColor = 0xFF448AFF // Blue
             )
         )
+        // Create Default Playsets
 
+        // Stopwatch
         dao.insertPlayset(
             Playset(
                 name = "Standard Stopwatch",
                 playerCount = 1,
                 counterTypesJson = "STOPWATCH",
                 autoAdvance = AutoAdvanceConfiguration(
-                    enabled = true,
+                    enabled = false,
                     reversed = false,
                     inversed = false
                 )
             )
         )
 
-        // Create Default Playsets
+        // Chess
         dao.insertPlayset(
             Playset(
                 name = "5 min Chess",
@@ -82,7 +93,6 @@ class HomeViewModel(private val dao: AppDAO) : ViewModel() {
             )
         )
 
-        // Create Default Playsets
         dao.insertPlayset(
             Playset(
                 name = "3 min + 2 sec Chess",
@@ -98,6 +108,7 @@ class HomeViewModel(private val dao: AppDAO) : ViewModel() {
             )
         )
 
+        // Magic the Gathering Life counters
         dao.insertPlayset(
             Playset(
                 name = "Magic the Gathering Life Counter",
@@ -107,7 +118,8 @@ class HomeViewModel(private val dao: AppDAO) : ViewModel() {
                 autoAdvance = AutoAdvanceConfiguration(
                     enabled = false,
                     reversed = false,
-                    inversed = false)
+                    inversed = false
+                )
             )
         )
 
@@ -120,13 +132,28 @@ class HomeViewModel(private val dao: AppDAO) : ViewModel() {
                 autoAdvance = AutoAdvanceConfiguration(
                     enabled = false,
                     reversed = false,
-                    inversed = false)
+                    inversed = false
+                )
+            )
+        )
+
+        // Hot potato time (showing off inverse auto advance)
+        dao.insertPlayset(
+            Playset(
+                name = "Hot Potato Time",
+                playerCount = 4,
+                counterTypesJson = "STOPWATCH,STOPWATCH,STOPWATCH,STOPWATCH",
+                autoAdvance = AutoAdvanceConfiguration(
+                    enabled = true,
+                    reversed = true,
+                    inversed = true
+                )
             )
         )
     }
 
     // Initialize a new game state and overwrite the old one
-    fun startNewGame(playset: Playset, onNavigate: () -> Unit) {
+    fun startNewGame(playset: Playset, selectedPlayers: List<Player>, onNavigate: () -> Unit) {
         viewModelScope.launch {
             val modes = playset.counterTypesJson.split(",").mapNotNull {
                 try { CounterMode.valueOf(it) } catch (_: Exception) { null }
@@ -138,12 +165,15 @@ class HomeViewModel(private val dao: AppDAO) : ViewModel() {
                 val playerMode = modes.getOrElse(index) { CounterMode.TIMER }
 
                 val startingValue = when (playerMode) {
-                    CounterMode.TIMER, CounterMode.STOPWATCH -> playset.startingTimerSeconds * 1000L
+                    CounterMode.TIMER -> playset.startingTimerSeconds * 1000L
+                    CounterMode.STOPWATCH -> 0L
                     CounterMode.LIFE -> playset.startingLife.toLong()
                 }
 
+                val profileId = selectedPlayers.getOrNull(index)?.playerID ?: 1
+
                 PlayerActiveState(
-                    playerProfileId = 1,
+                    playerProfileId = profileId,
                     mode = playerMode,
                     currentValue = startingValue,
                     isRunning = allLife,
@@ -160,6 +190,23 @@ class HomeViewModel(private val dao: AppDAO) : ViewModel() {
 
             dao.upsertActiveGame(newGameState)
             onNavigate()
+        }
+    }
+
+    // Function to delete a Playset
+    fun deletePlayset(playset: Playset) {
+        viewModelScope.launch {
+            dao.removePlayset(playset)
+        }
+    }
+
+    // Function to delete a Player
+    fun deletePlayer(player: Player) {
+        viewModelScope.launch {
+            // Hard safety check: Ensure the default player (ID 1) is never deleted
+            if (player.playerID != 1) {
+                dao.removePlayer(player)
+            }
         }
     }
 }

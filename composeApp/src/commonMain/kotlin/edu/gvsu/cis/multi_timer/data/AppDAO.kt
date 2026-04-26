@@ -52,6 +52,9 @@ interface AppDAO {
     @Query("SELECT * FROM Player")
     fun selectAllPlayers(): Flow<List<Player>>
 
+    @Query("SELECT * FROM Player WHERE playerID = :id")
+    suspend fun getPlayerById(id: Int): Player?
+
     // Active Game Queries
     @Query("SELECT * FROM ActiveGameState WHERE activeGameStateID = 0")
     fun getActiveGame(): Flow<ActiveGameState?>

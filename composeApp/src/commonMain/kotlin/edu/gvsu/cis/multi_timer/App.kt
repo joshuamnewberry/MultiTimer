@@ -17,31 +17,36 @@ fun App() {
 
         composable("home") {
             val viewModel = koinViewModel<HomeViewModel>()
-            val sessionManager = koinInject<PlaysetSessionManager>()
+            val sessionManager = koinInject<sessionManager>()
+
 
             HomeScreen(
                 viewModel = viewModel,
                 onNavigateToActiveGame = { navController.navigate("activeGame") },
-                onNavigateToSettings = { navController.navigate("settings") },
                 onNavigateToEditPlaysets = { playsetId ->
                     // Insert the ID then navigate
                     sessionManager.currentEditId = playsetId
                     navController.navigate("editPlaysets")
-                }
-            )
-        }
-
-        composable("settings") {
-            val viewModel = koinViewModel<SettingsViewModel>()
-            SettingsScreen(
-                viewModel = viewModel,
-                onBack = { navController.popBackStack() }
+                },
+                onNavigateToEditPlayers = { playersId ->
+                    // Insert the ID then navigate
+                    sessionManager.currentEditId = playersId
+                    navController.navigate("editPlayers")
+                },
             )
         }
 
         composable("editPlaysets") {
             val viewModel = koinViewModel<EditPlaysetsViewModel>()
             EditPlaysetsScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("editPlayers") {
+            val viewModel = koinViewModel<EditPlayersViewModel>()
+            EditPlayersScreen(
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() }
             )
