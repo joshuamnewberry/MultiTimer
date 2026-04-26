@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "50281cf9393189fabbf570505779e488",
+    "identityHash": "99b4809461b65267a3238c7cc24a2f96",
     "entities": [
       {
         "tableName": "Playset",
@@ -89,7 +89,7 @@
       },
       {
         "tableName": "Player",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `profilePicture` TEXT, `playerBackgroundPicture` TEXT, `playerBackgroundColorArgb` INTEGER NOT NULL, `playerID` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `profilePicture` TEXT, `playerBackgroundColor` INTEGER NOT NULL, `playerID` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)",
         "fields": [
           {
             "fieldPath": "name",
@@ -103,13 +103,8 @@
             "affinity": "TEXT"
           },
           {
-            "fieldPath": "playerBackgroundPicture",
-            "columnName": "playerBackgroundPicture",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "playerBackgroundColorArgb",
-            "columnName": "playerBackgroundColorArgb",
+            "fieldPath": "playerBackgroundColor",
+            "columnName": "playerBackgroundColor",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -237,7 +232,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '50281cf9393189fabbf570505779e488')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '99b4809461b65267a3238c7cc24a2f96')"
     ]
   }
 }

@@ -13,47 +13,58 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import edu.gvsu.cis.multi_timer.data.ActiveGameState
+import edu.gvsu.cis.multi_timer.data.Player
 import edu.gvsu.cis.multi_timer.viewModels.ActiveGameViewModel
 
 @Composable
-fun ThreePlayerScreen(viewModel: ActiveGameViewModel, activeGameState: ActiveGameState) {
+fun ThreePlayerScreen(
+    viewModel: ActiveGameViewModel,
+    activeGameState: ActiveGameState,
+    activePlayers: Map<Int, Player>
+) {
     val playset = activeGameState.currentPlayset
     val config = playset.autoAdvance
     val incrementMs = playset.incrementSeconds * 1000L
 
     Row(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
-            PlayerCounterScreen(
-                playerState = activeGameState.currentPlayersState[1], // Player 2
-                isGamePaused = activeGameState.isGamePaused,
-                onClick = { viewModel.handleInteraction(1, config, incrementMs) },
-                onLifeChange = { amount -> viewModel.updateLife(1, amount) },
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-                rotation = 90f
-            )
-            HorizontalDivider(thickness = 8.dp, color = Color.Black)
-            PlayerCounterScreen(
-                playerState = activeGameState.currentPlayersState[0], // Player 1
-                isGamePaused = activeGameState.isGamePaused,
-                onClick = { viewModel.handleInteraction(0, config, incrementMs) },
-                onLifeChange = { amount -> viewModel.updateLife(0, amount) },
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-                rotation = 90f
-            )
-        }
+        // Handled by Two Player Screen
+        TwoPlayerScreen(
+            viewModel = viewModel,
+            activeGameState = activeGameState,
+            activePlayers = activePlayers,
+            modifier = Modifier.weight(1f).fillMaxHeight(),
+            topPlayerIndex = 1,
+            bottomPlayerIndex = 0,
+            topPlayerRotation = 90f,
+            bottomPlayerRotation = 90f,
+        )
 
+        // Center line down the table
         VerticalDivider(thickness = 8.dp, color = Color.Black)
 
+        // Right Column
         Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            // Center the third player
             Spacer(modifier = Modifier.weight(1f))
+
+            // Place a divider before and after the player
+            HorizontalDivider(thickness = 8.dp, color = Color.Black)
+
+            // Draw the player
+            val p3 = activeGameState.currentPlayersState[2]
             PlayerCounterScreen(
-                playerState = activeGameState.currentPlayersState[2], // Player 3
+                playerState = p3,
+                playerProfile = activePlayers[p3.playerProfileId],
                 isGamePaused = activeGameState.isGamePaused,
+                isAutoAdvanceEnabled = config.enabled,
                 onClick = { viewModel.handleInteraction(2, config, incrementMs) },
                 onLifeChange = { amount -> viewModel.updateLife(2, amount) },
                 modifier = Modifier.weight(2f).fillMaxWidth(),
                 rotation = -90f
             )
+
+            HorizontalDivider(thickness = 8.dp, color = Color.Black)
+
             Spacer(modifier = Modifier.weight(1f))
         }
     }

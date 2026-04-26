@@ -18,8 +18,7 @@ data class AutoAdvanceConfiguration(
 data class Player(
     var name: String = "Player",
     var profilePicture: String? = null,
-    var playerBackgroundPicture: String? = null,
-    var playerBackgroundColorArgb: Long = 0xFFFFFFFF,
+    var playerBackgroundColor: Long = 0xFFFFFFFF,
     @PrimaryKey(autoGenerate = true) val playerID: Int = 0
 )
 

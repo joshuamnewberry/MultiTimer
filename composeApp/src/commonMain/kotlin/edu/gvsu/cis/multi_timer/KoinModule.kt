@@ -7,11 +7,11 @@ import org.koin.dsl.module
 
 fun appModule(dao: AppDAO) = module {
     single<AppDAO> { dao }
-    single { PlaysetSessionManager() }
+    single { sessionManager() }
 
     factory { HomeViewModel(get()) }
-    factory { SettingsViewModel(get()) }
     factory { EditPlaysetsViewModel(get(), get()) }
+    factory { EditPlayersViewModel(get(), get()) }
     factory { ActiveGameViewModel(get()) }
 }
 
@@ -20,9 +20,9 @@ fun initKoin(dao: AppDAO) {
         startKoin {
             modules(appModule(dao))
         }
-    } catch (e: Exception) { }
+    } catch (_: Exception) { }
 }
 
-class PlaysetSessionManager {
+class sessionManager {
     var currentEditId: Int? = null
 }

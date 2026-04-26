@@ -9,37 +9,42 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import edu.gvsu.cis.multi_timer.data.ActiveGameState
+import edu.gvsu.cis.multi_timer.data.Player
 import edu.gvsu.cis.multi_timer.viewModels.ActiveGameViewModel
 
 @Composable
-fun FourPlayerScreen(viewModel: ActiveGameViewModel, activeGameState: ActiveGameState) {
+fun FourPlayerScreen(
+    viewModel: ActiveGameViewModel,
+    activeGameState: ActiveGameState,
+    activePlayers: Map<Int, Player>
+) {
     Row(modifier = Modifier.fillMaxSize()) {
 
-        // Left Column (Player 3 on top, Player 1 on bottom)
+        // Left Column
         TwoPlayerScreen(
             viewModel = viewModel,
             activeGameState = activeGameState,
+            activePlayers = activePlayers,
             modifier = Modifier.weight(1f).fillMaxHeight(),
-            topPlayerIndex = 2,
-            bottomPlayerIndex = 0,
-            topPlayerRotation = 90f, // Faces the left edge
+            topPlayerIndex = 0,
+            bottomPlayerIndex = 3,
+            topPlayerRotation = 90f,
             bottomPlayerRotation = 90f,
-            isHorizontal = false // Stacked vertically inside its column
         )
 
         // Center line down the table
         VerticalDivider(thickness = 8.dp, color = Color.Black)
 
-        // Right Column (Player 4 on top, Player 2 on bottom)
+        // Right Column
         TwoPlayerScreen(
             viewModel = viewModel,
             activeGameState = activeGameState,
+            activePlayers = activePlayers,
             modifier = Modifier.weight(1f).fillMaxHeight(),
-            topPlayerIndex = 3,
-            bottomPlayerIndex = 1,
-            topPlayerRotation = -90f, // Faces the right edge
+            topPlayerIndex = 1,
+            bottomPlayerIndex = 2,
+            topPlayerRotation = -90f,
             bottomPlayerRotation = -90f,
-            isHorizontal = false // Stacked vertically inside its column
         )
     }
 }
