@@ -2,19 +2,27 @@ package edu.gvsu.cis.multi_timer.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import edu.gvsu.cis.multi_timer.data.Player
 import edu.gvsu.cis.multi_timer.data.Playset
 import edu.gvsu.cis.multi_timer.viewModels.HomeViewModel
@@ -24,6 +32,7 @@ import edu.gvsu.cis.multi_timer.viewModels.HomeViewModel
 fun HomeScreen(
     viewModel: HomeViewModel,
     onNavigateToActiveGame: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     onNavigateToEditPlaysets: (Int?) -> Unit,
     onNavigateToEditPlayers: (Int?) -> Unit
 ) {
@@ -50,9 +59,13 @@ fun HomeScreen(
                     Text(
                         text = "MultiTimer",
                         style = MaterialTheme.typography.headlineLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Green
+                        fontWeight = FontWeight.Bold
                     )
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
                 },
                 colors = TopAppBarColors(
                     containerColor = Color.Black,
@@ -62,7 +75,9 @@ fun HomeScreen(
                     actionIconContentColor = Color.Green,
                     subtitleContentColor = Color.Green
                 ),
-                modifier = Modifier.padding(top = 64.dp)
+                modifier = Modifier
+                    .padding(top = 48.dp)
+                    .padding(end = 24.dp)
             )
         }
     ) { paddingValues ->
@@ -332,11 +347,14 @@ fun HomeScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        showPlayerSelector = false
-                                        onNavigateToEditPlayers(player.playerID)
+                                        if (player.playerID != 1) {
+                                            showPlayerSelector = false
+                                            onNavigateToEditPlayers(player.playerID)
+                                        }
                                     }
                                     .padding(start = 8.dp, top = 8.dp, bottom = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
                                     text = player.name,
@@ -344,11 +362,60 @@ fun HomeScreen(
                                     modifier = Modifier.weight(1f),
                                     color = Color.White
                                 )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .weight(2f),
+                                    horizontalArrangement = Arrangement.SpaceAround,
+                                    verticalAlignment = Alignment.CenterVertically
+                                )
+                                {
+                                    if (player.profilePicture != null) {
+                                        AsyncImage(
+                                            model = player.profilePicture,
+                                            contentDescription = "Player Avatar",
+                                            modifier = Modifier
+                                                .size(35.dp)
+                                                .clip(CircleShape)
+                                                .background(Color.White)
+                                                .border(1.dp, Color.Cyan, CircleShape),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        // Placeholder when no picture exists
+                                        Box(
+                                            modifier = Modifier
+                                                .size(35.dp)
+                                                .clip(CircleShape)
+                                                .background(Color.DarkGray)
+                                                .border(1.dp, Color.LightGray, CircleShape),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Person,
+                                                contentDescription = "No Avatar",
+                                                modifier = Modifier.size(50.dp),
+                                                tint = Color.Gray
+                                            )
+                                        }
+                                    }
+
+                                    Box(
+                                        modifier = Modifier
+                                            .size(35.dp)
+                                            .clip(RoundedCornerShape(35.dp))
+                                            .background(Color(player.playerBackgroundColor))
+                                            .border(
+                                                BorderStroke(1.dp, Color.White.copy(alpha = 0.4f)),
+                                                RoundedCornerShape(35.dp)
+                                            )
+                                    )
+                                }
 
                                 // Protect the Default Player (ID 1) from deletion
                                 if (player.playerID != 1) {
-                                    IconButton(
-                                        onClick = { viewModel.deletePlayer(player) }
+                                    IconButton (
+                                        onClick = { viewModel.deletePlayer(player) },
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Delete,

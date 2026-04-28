@@ -15,8 +15,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import edu.gvsu.cis.multi_timer.data.CloudSyncManager
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
-class HomeViewModel(private val dao: AppDAO) : ViewModel() {
+class HomeViewModel(
+    private val dao: AppDAO,
+    private val cloudSyncManager: CloudSyncManager
+) : ViewModel() {
 
     // Observe if a game is currently in progress
     val hasActiveGame: StateFlow<Boolean> = dao.getActiveGame()
@@ -43,6 +49,12 @@ class HomeViewModel(private val dao: AppDAO) : ViewModel() {
             initialValue = emptyList()
         )
 
+    private val _syncKey = MutableStateFlow("")
+    val syncKey: StateFlow<String> = _syncKey.asStateFlow()
+
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+
     init {
         viewModelScope.launch {
             // First Run Check
@@ -51,6 +63,29 @@ class HomeViewModel(private val dao: AppDAO) : ViewModel() {
             if (currentPlayers.isEmpty()) {
                 initializeDefaults()
             }
+        }
+    }
+
+    suspend fun loadSyncKey() {
+        _syncKey.value = cloudSyncManager.getOrGenerateSyncKey()
+    }
+
+    fun pushBackupToCloud() {
+        viewModelScope.launch {
+            _isSyncing.value = true
+            cloudSyncManager.pushToCloud()
+            _isSyncing.value = false
+        }
+    }
+
+    fun pullBackupFromCloud(friendKey: String, onComplete: () -> Unit) {
+        viewModelScope.launch {
+            _isSyncing.value = true
+            // Ensure the key is fully capitalized to match database format
+            cloudSyncManager.pullFromCloud(friendKey.trim().uppercase())
+            _syncKey.value = cloudSyncManager.getOrGenerateSyncKey() // Refresh the local key
+            _isSyncing.value = false
+            onComplete()
         }
     }
 

@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 enum class CounterMode { TIMER, STOPWATCH, LIFE }
 
+@Serializable
 data class AutoAdvanceConfiguration(
     val enabled: Boolean = true,
     val reversed: Boolean = false,
@@ -15,11 +16,12 @@ data class AutoAdvanceConfiguration(
 )
 
 @Entity
+@Serializable
 data class Player(
     var name: String = "Player",
     var profilePicture: String? = null,
     var playerBackgroundColor: Long = 0xFFFFFFFF,
-    @PrimaryKey(autoGenerate = true) val playerID: Int = 0
+    @PrimaryKey(autoGenerate = true) val playerID: Int = 1
 )
 
 @Serializable
@@ -32,6 +34,7 @@ data class PlayerActiveState(
 )
 
 @Entity
+@Serializable
 data class Playset(
     val name: String = "Playset",
     val playerCount: Int = 2,
@@ -53,3 +56,15 @@ data class ActiveGameState(
     val hasGameStarted: Boolean = false,
     @PrimaryKey val activeGameStateID: Int = 0
 )
+
+@Entity
+data class AppSettings(
+    @PrimaryKey val id: Int = 1,
+    val syncKey: String
+)
+
+@Serializable
+data class CloudPlaysets(val playsets: List<Playset>)
+
+@Serializable
+data class CloudPlayers(val players: List<Player>)

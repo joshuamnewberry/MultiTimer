@@ -49,6 +49,9 @@ interface AppDAO {
     @Delete
     suspend fun removePlayer(player: Player)
 
+    @Query("DELETE FROM Playset")
+    suspend fun removeAllPlayers()
+
     @Query("SELECT * FROM Player")
     fun selectAllPlayers(): Flow<List<Player>>
 
@@ -64,11 +67,17 @@ interface AppDAO {
 
     @Query("DELETE FROM ActiveGameState")
     suspend fun clearActiveGame()
+
+    @Query("SELECT * FROM AppSettings WHERE id = 1")
+    suspend fun getSettings(): AppSettings?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveSettings(settings: AppSettings)
 }
 
 @Database(
-    entities = [Playset::class, Player::class, ActiveGameState::class],
-    version = 1,
+    entities = [Playset::class, Player::class, ActiveGameState::class, AppSettings::class],
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

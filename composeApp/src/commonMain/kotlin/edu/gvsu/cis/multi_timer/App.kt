@@ -33,6 +33,7 @@ fun App() {
             HomeScreen(
                 viewModel = viewModel,
                 onNavigateToActiveGame = { navController.navigate("activeGame") },
+                onNavigateToSettings = { navController.navigate("settings") },
                 onNavigateToEditPlaysets = { playsetId ->
                     // Insert the ID then navigate
                     sessionManager.currentEditId = playsetId
@@ -43,6 +44,22 @@ fun App() {
                     sessionManager.currentEditId = playersId
                     navController.navigate("editPlayers")
                 },
+            )
+        }
+
+        composable("settings") {
+            val viewModel = koinViewModel<HomeViewModel>()
+            SettingsScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("activeGame") {
+            val viewModel = koinViewModel<ActiveGameViewModel>()
+            ActiveGameScreen(
+                viewModel = viewModel,
+                onExitGame = { navController.popBackStack() }
             )
         }
 
@@ -59,14 +76,6 @@ fun App() {
             EditPlayersScreen(
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable("activeGame") {
-            val viewModel = koinViewModel<ActiveGameViewModel>()
-            ActiveGameScreen(
-                viewModel = viewModel,
-                onExitGame = { navController.popBackStack() }
             )
         }
     }

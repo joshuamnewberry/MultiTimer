@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "858381297100",
+    "project_id": "multitimer-3775d",
+    "storage_bucket": "multitimer-3775d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:858381297100:android:54a118b70e727900f06969",
+        "android_client_info": {
+          "package_name": "edu.gvsu.cis.multi_timer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAebGU99wB8l1D5SPhG2IIxO1HcywNIT4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
