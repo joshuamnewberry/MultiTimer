@@ -18,11 +18,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import edu.gvsu.cis.multi_timer.data.CounterMode
 import edu.gvsu.cis.multi_timer.data.Player
 import edu.gvsu.cis.multi_timer.data.PlayerActiveState
@@ -42,7 +46,7 @@ fun PlayerCounterScreen(
     val playerName = playerProfile?.name ?: "Player"
     val isDefaultColor = playerProfile == null || playerProfile.playerBackgroundColor == 0xFFFFFFFFL
     val bgColor = if (isDefaultColor) MaterialTheme.colorScheme.primaryContainer else Color(playerProfile.playerBackgroundColor)
-    val contentColor = if (isDefaultColor) MaterialTheme.colorScheme.onPrimaryContainer else Color.White
+    val contentColor = if (isDefaultColor) MaterialTheme.colorScheme.onPrimaryContainer else if(bgColor.luminance() > .5) Color.Black else Color.White
 
     // Logic for button indicator
     val showRipple = !isGamePaused && playerState.mode != CounterMode.LIFE &&
@@ -117,16 +121,13 @@ fun PlayerCounterScreen(
 
                 // The Player Profile Tag
                 Row(
-                    modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
+                    modifier = Modifier.align(Alignment.TopStart)
+                        .padding(all = 16.dp)
+                        .padding(top = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Profile Picture Placeholder (Circle with Initial)
-                    Box(
-                        modifier = Modifier.size(32.dp).background(Color.Black.copy(alpha = 0.3f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(playerName.take(1).uppercase(), color = contentColor, fontWeight = FontWeight.Bold)
-                    }
+                    // Profile Picture
+                    ProfilePic(playerName, playerProfile?.profilePicture, contentColor)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = playerName,
@@ -135,12 +136,63 @@ fun PlayerCounterScreen(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
+                Row(
+                    modifier = Modifier.align(Alignment.TopEnd)
+                        .padding(all = 16.dp)
+                        .padding(top = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .graphicsLayer(rotationZ = 180f)
+                            .wrapContentSize(unbounded = true)
+                    ) {
+                        Row {
+                            // Profile Picture
+                            ProfilePic(playerName, playerProfile?.profilePicture, contentColor)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = playerName,
+                                color = contentColor,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
             }
         }
 
         // Draw the Active Turn Border on the absolute top layer
         if (showBorder) {
             Box(modifier = Modifier.matchParentSize().border(2.dp, Color.White))
+        }
+    }
+}
+
+@Composable
+fun ProfilePic(name: String, picture: String?, contentColor: Color) {
+    Box(
+        modifier = Modifier.size(32.dp).background(Color.Black.copy(alpha = 0.3f), CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        if(picture != null) {
+            AsyncImage(
+                model = picture,
+                contentDescription = "Player Avatar",
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(Color.White),
+                contentScale = ContentScale.Crop,
+            )
+        }
+        else {
+            Text(
+                name.take(1).uppercase(),
+                color = contentColor,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

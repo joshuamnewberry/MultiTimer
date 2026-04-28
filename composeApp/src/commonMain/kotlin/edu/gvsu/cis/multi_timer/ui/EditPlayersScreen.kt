@@ -21,6 +21,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import edu.gvsu.cis.multi_timer.viewModels.EditPlayersViewModel
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
+import coil3.compose.AsyncImage
+import edu.gvsu.cis.multi_timer.rememberCameraManager
+import androidx.compose.ui.layout.ContentScale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +40,14 @@ fun EditPlayersScreen(
     val red by viewModel.redColor.collectAsState()
     val green by viewModel.greenColor.collectAsState()
     val blue by viewModel.blueColor.collectAsState()
+    val profilePicture by viewModel.profilePicture.collectAsState()
+
+
+    val cameraManager = rememberCameraManager { capturedByteArray ->
+        if (capturedByteArray != null) {
+            viewModel.saveCameraCapture(capturedByteArray)
+        }
+    }
 
     // Live preview of the constructed color
     val previewColor = Color(red = red, green = green, blue = blue, alpha = 1f)
@@ -73,27 +88,103 @@ fun EditPlayersScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Row (verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
-                    modifier = Modifier.padding(top = 12.dp).padding(horizontal = 2.dp),
-                    onClick = { }
-                ) {
-                    Icon(Icons.Default.PhotoCamera, contentDescription = "Open Camera", tint = Color.White)
-                }
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { viewModel.updateName(it) },
-                    label = { Text("Player Name", color = Color.LightGray) },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = Color.Cyan,
-                        unfocusedBorderColor = Color.DarkGray,
-                        cursorColor = Color.Cyan
+            // Preview Profile Picture
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (profilePicture != null) {
+                    AsyncImage(
+                        model = profilePicture,
+                        contentDescription = "Player Avatar",
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
+                            .background(Color.White)
+                            .border(2.dp, Color.Cyan, CircleShape),
+                        contentScale = ContentScale.Crop,
                     )
-                )
+                } else {
+                    // Placeholder when no picture exists
+                    Box(
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
+                            .background(Color.DarkGray)
+                            .border(2.dp, Color.LightGray, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "No Avatar",
+                            modifier = Modifier.size(60.dp),
+                            tint = Color.Gray
+                        )
+                    }
+                }
             }
+
+            // Camera/Random Avatar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(
+                    onClick = { cameraManager.launchCamera() },
+                ) {
+                    Icon(
+                        Icons.Default.PhotoCamera,
+                        contentDescription = "Camera",
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+                    Text("Camera")
+                }
+
+                OutlinedButton(
+                    onClick = { viewModel.randomizeAvatar() }
+                ) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = "Randomize",
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+                    Text("Randomize")
+                }
+            }
+            if(profilePicture != null) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    OutlinedButton(
+                        onClick = { viewModel.updateProfilePicture(null) }
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Delete",
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
+                        Text("Delete")
+                    }
+                }
+            }
+
+            // Name input
+            OutlinedTextField(
+                value = name,
+                onValueChange = { viewModel.updateName(it) },
+                label = { Text("Player Name", color = Color.LightGray) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = Color.Cyan,
+                    unfocusedBorderColor = Color.DarkGray,
+                    cursorColor = Color.Cyan
+                )
+            )
 
             HorizontalDivider(color = Color.DarkGray)
 

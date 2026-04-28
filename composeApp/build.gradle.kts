@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.androidx.room)
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("com.google.gms.google-services")
 }
 
 kotlin {
@@ -61,6 +62,13 @@ kotlin {
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.kotlinx.serialization.json)
+
+            // Firebase
+            implementation(libs.firebase.firestore)
+
+            // Coil
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

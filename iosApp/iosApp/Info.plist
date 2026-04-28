@@ -4,5 +4,7 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+    <string>MultiTimer needs access to the camera to take player profile pictures.</string>
 </dict>
 </plist>

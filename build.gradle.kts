@@ -7,4 +7,5 @@ plugins {
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.androidx.room) apply false
     id("org.jetbrains.kotlin.plugin.serialization") version "2.3.20" apply false
+    id("com.google.gms.google-services") version "4.4.4" apply false
 }

@@ -8,9 +8,19 @@ import edu.gvsu.cis.multi_timer.ui.*
 import edu.gvsu.cis.multi_timer.viewModels.*
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import coil3.ImageLoader
+import coil3.compose.setSingletonImageLoaderFactory
+import coil3.network.ktor.KtorNetworkFetcherFactory
 
 @Composable
 fun App() {
+    setSingletonImageLoaderFactory { context ->
+        ImageLoader.Builder(context)
+            .components {
+                add(KtorNetworkFetcherFactory())
+            }
+            .build()
+    }
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "home") {

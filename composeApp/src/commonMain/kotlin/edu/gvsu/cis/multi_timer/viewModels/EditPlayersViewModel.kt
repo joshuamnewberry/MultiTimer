@@ -10,6 +10,11 @@ import edu.gvsu.cis.multi_timer.data.Player
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
+import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.statement.readRawBytes
 
 class EditPlayersViewModel(
     private val dao: AppDAO,
@@ -20,7 +25,7 @@ class EditPlayersViewModel(
     private val _name = MutableStateFlow("")
     val name = _name.asStateFlow()
 
-    private val _profilePicture = MutableStateFlow("")
+    private val _profilePicture:MutableStateFlow<String?> = MutableStateFlow(null)
     val profilePicture = _profilePicture.asStateFlow()
 
     private val _redColor = MutableStateFlow(0f)
@@ -32,6 +37,8 @@ class EditPlayersViewModel(
     private val _blueColor = MutableStateFlow(0f)
     val blueColor = _blueColor.asStateFlow()
 
+    private val httpClient = HttpClient()
+
     init {
         val idToEdit = sessionManager.currentEditId
         if (idToEdit != null) {
@@ -40,6 +47,29 @@ class EditPlayersViewModel(
         } else {
             // Default new players to White
             unpackColors(0xFFFFFFFF)
+        }
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    fun saveCameraCapture(byteArray: ByteArray) {
+        val base64String = Base64.encode(byteArray)
+        _profilePicture.value = "data:image/jpeg;base64,$base64String"
+    }
+
+    fun randomizeAvatar() {
+        val randomSeed = (0..1000000).random()
+        // Swapped png for jpeg in the URL
+        val url = "https://api.dicebear.com/8.x/pixel-art/jpeg?seed=$randomSeed"
+
+        viewModelScope.launch {
+            try {
+                val responseBytes = httpClient.get(url).readRawBytes()
+                // Directly use the camera save function since it is now a JPEG
+                saveCameraCapture(responseBytes)
+            } catch (e: Exception) {
+                println("Failed to download avatar: ${e.message}")
+                e.printStackTrace()
+            }
         }
     }
 
@@ -73,7 +103,7 @@ class EditPlayersViewModel(
 
     // Updates from user
     fun updateName(newName: String) { _name.value = newName }
-    fun updateProfilePicture(newPic: String) { _profilePicture.value = newPic }
+    fun updateProfilePicture(newPic: String?) { _profilePicture.value = newPic }
     fun updateRed(red: Float) { _redColor.value = red }
     fun updateGreen(green: Float) { _greenColor.value = green }
     fun updateBlue(blue: Float) { _blueColor.value = blue }
@@ -83,7 +113,7 @@ class EditPlayersViewModel(
             dao.insertPlayer(
                 Player(
                     name = _name.value,
-                    profilePicture = _profilePicture.value.ifEmpty { null },
+                    profilePicture = _profilePicture.value,
                     playerBackgroundColor = packColors(),
                     playerID = editingPlayerId
                 )
